@@ -6,7 +6,37 @@
   .shadow-glow {
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
   }
+  .shadow-glow-lg {
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+  }
   .timer-glow {
     text-shadow: 0 0 10px cyan;
   }
+  .text-glow {
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-slate-100 text-slate-950;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-cyan-900/40 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-cyan-800/60;
+  }
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.5;
 }

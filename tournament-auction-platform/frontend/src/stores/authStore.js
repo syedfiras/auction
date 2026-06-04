@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 export const useAuthStore = create((set) => ({
   session: null,
   isLoading: true,
@@ -23,7 +25,6 @@ export const useAuthStore = create((set) => ({
       email, 
       password, 
       metadata.full_name, 
-      metadata.role, 
       metadata.phone
     );
     localStorage.setItem('token', data.token);
@@ -43,26 +44,35 @@ export const useAuthStore = create((set) => ({
   
   setSession: (session) => set({ session, isLoading: false }),
   
-  loadToken: () => {
+  loadToken: async () => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Decode JWT to get user info (optional, or you can fetch /me endpoint)
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        set({ 
-          session: { 
-            user: { 
-              id: payload.id, 
-              email: payload.email, 
+        set({
+          session: {
+            user: {
+              id: payload.id,
+              email: payload.email,
               role: payload.role,
               full_name: payload.full_name
-            }, 
-            access_token: token 
-          }, 
-          isLoading: false 
+            },
+            access_token: token
+          },
+          isLoading: true
+        });
+        const response = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error('Session expired');
+        const data = await response.json();
+        set({
+          session: { user: data.user, access_token: token },
+          isLoading: false,
         });
       } catch (e) {
         console.error('Invalid token', e);
+        localStorage.removeItem('token');
         set({ isLoading: false, session: null });
       }
     } else {

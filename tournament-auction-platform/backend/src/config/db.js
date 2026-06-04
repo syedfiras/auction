@@ -1,30 +1,30 @@
-// =====================================================
-// ACTIVE: MySQL connection pool
-// =====================================================
-import mysql from 'mysql2/promise';
+import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required');
+}
 
-export default pool;
+function getSupabaseKeyRole(key) {
+  try {
+    const payload = JSON.parse(Buffer.from(key.split('.')[1], 'base64url').toString('utf8'));
+    return payload.role;
+  } catch {
+    return null;
+  }
+}
 
-// =====================================================
-// SUPABASE ALTERNATIVE (commented for production use)
-// =====================================================
-/*
-import { createClient } from '@supabase/supabase-js';
+if (getSupabaseKeyRole(process.env.SUPABASE_SERVICE_ROLE_KEY) !== 'service_role') {
+  throw new Error('SUPABASE_SERVICE_ROLE_KEY must be the secret service_role key, not the anon/public key');
+}
+
 export const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-// Then use supabase instead of pool in other files.
-*/
+
+export async function must(result) {
+  if (result.error) throw result.error;
+  return result.data;
+}

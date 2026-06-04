@@ -1,4 +1,4 @@
-import pool from '../config/db.js';
+import { supabase, must } from '../config/db.js';
 
 class AuctionEngine {
   constructor(io, tournamentId) {
@@ -14,11 +14,12 @@ class AuctionEngine {
   }
 
   async loadTournamentSettings() {
-    const [rows] = await pool.query(
-      'SELECT timer_seconds FROM tournaments WHERE id = ?',
-      [this.tournamentId]
-    );
-    this.timer = rows[0]?.timer_seconds ?? 30;
+    const tournament = await must(await supabase
+      .from('tournaments')
+      .select('timer_seconds')
+      .eq('id', this.tournamentId)
+      .maybeSingle());
+    this.timer = tournament?.timer_seconds ?? 30;
   }
 
   async start() {
@@ -35,14 +36,15 @@ class AuctionEngine {
   }
 
   async pickRandomPlayer() {
-    const [players] = await pool.query(
-      `SELECT * FROM players
-       WHERE tournament_id = ? AND status = 'approved'`,
-      [this.tournamentId]
-    );
+    const players = await must(await supabase
+      .from('players')
+      .select('*')
+      .eq('tournament_id', this.tournamentId)
+      .eq('status', 'approved'));
     if (!players || players.length === 0) {
       this.currentPlayer = null;
-      this.io.to(this.room).emit('auctionCompleted');
+      await must(await supabase.from('tournaments').update({ status: 'completed' }).eq('id', this.tournamentId));
+      this.io.to(this.room).emit('auctionCompleted', { reason: 'no_more_players' });
       this.stop();
       return;
     }
@@ -75,22 +77,21 @@ class AuctionEngine {
     if (!this.active) throw new Error('Auction not active');
     if (bidAmount <= this.currentBid) throw new Error('Bid must be higher');
 
-    const [teamRows] = await pool.query(
-      `SELECT t.remaining_points, tour.squad_limit
-       FROM teams t
-       JOIN tournaments tour ON t.tournament_id = tour.id
-       WHERE t.id = ?`,
-      [teamId]
-    );
-    if (teamRows.length === 0) throw new Error('Team not found');
-    const team = teamRows[0];
+    const team = await must(await supabase
+      .from('teams')
+      .select('remaining_points, tournaments(squad_limit)')
+      .eq('id', teamId)
+      .maybeSingle());
+    if (!team) throw new Error('Team not found');
     if (team.remaining_points < bidAmount) throw new Error('Insufficient points');
 
-    const [squadRows] = await pool.query(
-      'SELECT COUNT(*) as count FROM players WHERE sold_to_team = ? AND status = "sold"',
-      [teamId]
-    );
-    if (squadRows[0].count >= team.squad_limit) throw new Error('Squad full');
+    const { count, error } = await supabase
+      .from('players')
+      .select('id', { count: 'exact', head: true })
+      .eq('sold_to_team', teamId)
+      .eq('status', 'sold');
+    if (error) throw error;
+    if ((count || 0) >= (team.tournaments?.squad_limit || 18)) throw new Error('Squad full');
 
     const wasSniping = this.timer <= 10;
     this.currentBid = bidAmount;
@@ -127,15 +128,30 @@ class AuctionEngine {
   async finalizeCurrentPlayer() {
     if (!this.currentPlayer) return;
     if (this.highestTeamId && this.currentBid > 0) {
-      await pool.query('UPDATE teams SET remaining_points = remaining_points - ? WHERE id = ?', [this.currentBid, this.highestTeamId]);
-      await pool.query('UPDATE players SET status = "sold", sold_to_team = ?, sold_price = ? WHERE id = ?', [this.highestTeamId, this.currentBid, this.currentPlayer.id]);
-      await pool.query(
-        `INSERT INTO auctions (tournament_id, player_id, winning_team_id, winning_bid, status, ended_at)
-         VALUES (?, ?, ?, ?, 'sold', NOW())`,
-        [this.tournamentId, this.currentPlayer.id, this.highestTeamId, this.currentBid]
-      );
-      const [teamRows] = await pool.query('SELECT name FROM teams WHERE id = ?', [this.highestTeamId]);
-      const teamName = teamRows[0]?.name;
+      const team = await must(await supabase
+        .from('teams')
+        .select('name, remaining_points')
+        .eq('id', this.highestTeamId)
+        .single());
+      await must(await supabase
+        .from('teams')
+        .update({ remaining_points: team.remaining_points - this.currentBid })
+        .eq('id', this.highestTeamId));
+      await must(await supabase
+        .from('players')
+        .update({ status: 'sold', sold_to_team: this.highestTeamId, sold_price: this.currentBid })
+        .eq('id', this.currentPlayer.id));
+      await must(await supabase
+        .from('auctions')
+        .insert({
+          tournament_id: this.tournamentId,
+          player_id: this.currentPlayer.id,
+          winning_team_id: this.highestTeamId,
+          winning_bid: this.currentBid,
+          status: 'sold',
+          ended_at: new Date().toISOString(),
+        }));
+      const teamName = team.name;
       const soldPayload = {
         player: this.currentPlayer,
         teamId: this.highestTeamId,
@@ -150,7 +166,7 @@ class AuctionEngine {
         });
       }
     } else {
-      await pool.query('UPDATE players SET status = "unsold" WHERE id = ?', [this.currentPlayer.id]);
+      await must(await supabase.from('players').update({ status: 'unsold' }).eq('id', this.currentPlayer.id));
       this.io.to(this.room).emit('playerUnsold', this.currentPlayer);
     }
     this.currentPlayer = null;
@@ -175,7 +191,7 @@ class AuctionEngine {
     if (this.currentPlayer) {
       await this.finalizeCurrentPlayer();
     }
-    await pool.query("UPDATE tournaments SET status = 'completed' WHERE id = ?", [this.tournamentId]);
+    await must(await supabase.from('tournaments').update({ status: 'completed' }).eq('id', this.tournamentId));
     this.io.to(this.room).emit('auctionCompleted', { reason: 'ended_by_admin' });
     this.stop();
   }
@@ -189,12 +205,3 @@ class AuctionEngine {
 
 export default AuctionEngine;
 
-// =====================================================
-// SUPABASE ALTERNATIVE (commented)
-// =====================================================
-/*
-import { supabase } from '../config/db.js';
-class AuctionEngine {
-  // ... same methods but using supabase queries
-}
-*/

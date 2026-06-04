@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import CaptainDashboard from './pages/CaptainDashboard';
 import PlayerDashboard from './pages/PlayerDashboard';
+import Viewer from './pages/Viewer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
@@ -15,31 +16,42 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Navbar />
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/" element={
-          isLoading ? (
-            <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Loading...</div>
-          ) : session ? (
-            <Navigate to={getDashboardPath(getUserRole(session.user))} replace />
-          ) : <Navigate to="/login" replace />
-        } />
-        <Route path="/admin" element={
+        <Route path="/viewer" element={
           <ProtectedRoute allowedRoles={['admin']}>
-            <AdminDashboard />
+            <Viewer />
           </ProtectedRoute>
         } />
-        <Route path="/captain" element={
-          <ProtectedRoute allowedRoles={['captain']}>
-            <CaptainDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/player" element={
-          <ProtectedRoute allowedRoles={['player']}>
-            <PlayerDashboard />
-          </ProtectedRoute>
+        <Route path="*" element={
+          <>
+            <Navbar />
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/" element={
+                isLoading ? (
+                  <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Loading...</div>
+                ) : session ? (
+                  <Navigate to={getDashboardPath(getUserRole(session.user))} replace />
+                ) : <Navigate to="/login" replace />
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/captain" element={
+                <ProtectedRoute allowedRoles={['captain']}>
+                  <CaptainDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/player" element={
+                <ProtectedRoute allowedRoles={['player']}>
+                  <PlayerDashboard />
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </>
         } />
       </Routes>
     </BrowserRouter>

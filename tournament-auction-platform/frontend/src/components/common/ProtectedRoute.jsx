@@ -9,8 +9,10 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-        Loading...
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="text-center">
+          <p className="text-slate-700 text-lg">Loading...</p>
+        </div>
       </div>
     );
   }

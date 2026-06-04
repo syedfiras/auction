@@ -7,9 +7,12 @@ export default function AdminControls({ tournamentId, disabled, onAuctionEnded }
 
   if (!tournamentId) {
     return (
-      <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-cyan-500/30">
-        <h2 className="text-2xl font-bold mb-2">Auction Controls</h2>
-        <p className="text-gray-400">Create and activate a tournament first.</p>
+      <div className="bg-white/10 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/30">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="text-2xl">&#9878;</div>
+          <h2 className="text-2xl font-bold">Auction Controls</h2>
+        </div>
+        <p className="text-gray-400 text-sm">Create and activate a tournament first.</p>
       </div>
     );
   }
@@ -20,46 +23,66 @@ export default function AdminControls({ tournamentId, disabled, onAuctionEnded }
   const skipPlayer = () => emitAdmin('admin:skipPlayer', { tournamentId });
   const markUnsold = () => emitAdmin('admin:markUnsold', { tournamentId });
   const endAuction = () => {
-    if (!window.confirm('End the entire auction now? The current player will be finalized and no more players will be auctioned.')) {
-      return;
-    }
+    if (!window.confirm('End the entire auction? The current player will be finalized.')) return;
     emitAdmin('admin:endAuction', { tournamentId });
   };
 
-  const btnClass = (color) =>
-    `${color} p-3 rounded-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed`;
+  const Btn = ({ onClick, disabled: btnDisabled, color, label }) => (
+    <button
+      onClick={onClick}
+      disabled={btnDisabled ?? disabled}
+      className={`${color} p-3 rounded-xl font-bold disabled:opacity-40 disabled:cursor-not-allowed transition text-sm`}
+    >
+      {label}
+    </button>
+  );
 
   return (
-    <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-cyan-500/30">
-      <h2 className="text-2xl font-bold mb-4">Auction Controls</h2>
-      {disabled && (
-        <p className="text-yellow-400 text-sm mb-3">Activate the tournament before starting the auction.</p>
-      )}
-      <p className={`text-sm mb-3 ${connected ? 'text-green-400' : 'text-orange-400'}`}>
-        Socket: {connected ? 'connected' : 'connecting…'}
-      </p>
-      {status && <p className="text-cyan-300 text-sm mb-3">{status}</p>}
-      {isActive && currentPlayer && (
-        <div className="mb-4 p-3 bg-black/30 rounded-lg text-sm">
-          <p className="font-bold">{currentPlayer.full_name}</p>
-          <p className="text-gray-400">
-            Current bid: {currentBid} · Timer: {timer}s
-          </p>
+    <div className="bg-white/10 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/30">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="text-2xl">&#9878;</div>
+        <h2 className="text-2xl font-bold">Auction Controls</h2>
+      </div>
+
+      <div className="flex items-center gap-3 mb-3">
+        <span className={`inline-block w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-orange-400'} animate-pulse`} />
+        <span className={`text-sm ${connected ? 'text-green-400' : 'text-orange-400'}`}>
+          {connected ? 'Connected' : 'Connecting...'}
+        </span>
+      </div>
+
+      {disabled && tournamentId && (
+        <div className="text-yellow-400 text-xs bg-yellow-900/20 p-2 rounded-lg mb-3">
+          Activate the tournament to enable auction controls.
         </div>
       )}
-      <div className="grid grid-cols-2 gap-4">
-        <button onClick={startAuction} disabled={disabled} className={btnClass('bg-green-600 hover:bg-green-700')}>Start</button>
-        <button onClick={pauseAuction} disabled={disabled} className={btnClass('bg-yellow-600 hover:bg-yellow-700')}>Pause</button>
-        <button onClick={resumeAuction} disabled={disabled} className={btnClass('bg-blue-600 hover:bg-blue-700')}>Resume</button>
-        <button onClick={skipPlayer} disabled={disabled} className={btnClass('bg-orange-600 hover:bg-orange-700')}>Skip Player</button>
-        <button onClick={markUnsold} disabled={disabled} className={btnClass('bg-red-600 hover:bg-red-700')}>Mark Unsold</button>
-        <button
+
+      {status && (
+        <div className="text-cyan-300 text-sm bg-cyan-900/10 p-2 rounded-lg mb-3">{status}</div>
+      )}
+
+      {isActive && currentPlayer && (
+        <div className="mb-4 p-4 bg-gradient-to-r from-purple-900/20 to-cyan-900/20 rounded-xl border border-cyan-500/20">
+          <p className="font-bold text-lg">{currentPlayer.full_name}</p>
+          <div className="flex gap-4 mt-1 text-sm">
+            <span className="text-cyan-400">Bid: {currentBid}</span>
+            <span className={timer <= 10 ? 'text-red-400 font-bold' : 'text-gray-300'}>Timer: {timer}s</span>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <Btn onClick={startAuction} color="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500" label="Start" />
+        <Btn onClick={pauseAuction} color="bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500" label="Pause" />
+        <Btn onClick={resumeAuction} color="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500" label="Resume" />
+        <Btn onClick={skipPlayer} color="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500" label="Skip" />
+        <Btn onClick={markUnsold} color="bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-600 hover:to-rose-600" label="Unsold" />
+        <Btn
           onClick={endAuction}
           disabled={disabled || (!isActive && !currentPlayer)}
-          className={btnClass('bg-purple-700 hover:bg-purple-800')}
-        >
-          End Auction
-        </button>
+          color="bg-gradient-to-r from-purple-700 to-violet-700 hover:from-purple-600 hover:to-violet-600"
+          label="End All"
+        />
       </div>
     </div>
   );

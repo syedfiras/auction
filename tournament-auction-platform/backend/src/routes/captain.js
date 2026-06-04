@@ -1,28 +1,33 @@
 import express from 'express';
 import { authenticate, requireRole } from '../middleware/auth.js';
-import pool from '../config/db.js';
+import { supabase, must } from '../config/db.js';
 
 const router = express.Router();
 router.use(authenticate);
 router.use(requireRole(['captain']));
 
 router.get('/my-team', async (req, res) => {
-  const [rows] = await pool.query(
-    `SELECT t.*, tour.name as tournament_name
-     FROM teams t
-     JOIN tournaments tour ON t.tournament_id = tour.id
-     WHERE t.captain_id = ?`,
-    [req.user.id]
-  );
-  if (rows.length === 0) return res.status(404).json({ error: 'Team not found' });
-  res.json(rows[0]);
+  const team = await must(await supabase
+    .from('teams')
+    .select('*, tournaments(name)')
+    .eq('captain_id', req.user.id)
+    .maybeSingle());
+  if (!team) return res.status(404).json({ error: 'Team not found' });
+  res.json({ ...team, tournament_name: team.tournaments?.name });
 });
 
 router.get('/squad', async (req, res) => {
-  const [teamRows] = await pool.query('SELECT id FROM teams WHERE captain_id = ?', [req.user.id]);
-  if (teamRows.length === 0) return res.status(404).json({ error: 'Team not found' });
-  const teamId = teamRows[0].id;
-  const [players] = await pool.query('SELECT * FROM players WHERE sold_to_team = ? AND status = "sold"', [teamId]);
+  const team = await must(await supabase
+    .from('teams')
+    .select('id')
+    .eq('captain_id', req.user.id)
+    .maybeSingle());
+  if (!team) return res.status(404).json({ error: 'Team not found' });
+  const players = await must(await supabase
+    .from('players')
+    .select('*')
+    .eq('sold_to_team', team.id)
+    .eq('status', 'sold'));
   res.json(players);
 });
 

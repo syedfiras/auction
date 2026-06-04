@@ -1,12 +1,17 @@
 import express from 'express';
-import pool from '../config/db.js';
+import { supabase, must } from '../config/db.js';
 
 const router = express.Router();
 
 router.get('/active', async (req, res) => {
-  const [rows] = await pool.query("SELECT * FROM tournaments WHERE status = 'active' LIMIT 1");
-  if (rows.length === 0) return res.status(404).json({ error: 'No active tournament' });
-  res.json(rows[0]);
+  const tournament = await must(await supabase
+    .from('tournaments')
+    .select('*')
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle());
+  if (!tournament) return res.status(404).json({ error: 'No active tournament' });
+  res.json(tournament);
 });
 
 export default router;

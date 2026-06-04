@@ -1,11 +1,19 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Profiles table (linked to Supabase Auth)
+-- Public bucket used by player photo uploads.
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('player-photos', 'player-photos', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Profiles table for the app's JWT auth.
+-- Admins are seeded by the backend. Everyone who signs up starts as a player.
 CREATE TABLE public.profiles (
-  id UUID REFERENCES auth.users(id) PRIMARY KEY,
-  full_name TEXT,
-  role TEXT CHECK (role IN ('admin', 'captain', 'player')),
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'player' CHECK (role IN ('admin', 'captain', 'player')),
   phone TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -43,10 +51,8 @@ CREATE TABLE players (
   phone TEXT,
   position TEXT,
   preferred_foot TEXT,
-  experience TEXT,
   photo_url TEXT,
-  skill_rating INT,
-  status TEXT DEFAULT 'pending',
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'captain', 'sold', 'unsold')),
   tournament_id UUID REFERENCES tournaments(id),
   registered_by UUID REFERENCES profiles(id),
   approved_by UUID REFERENCES profiles(id),
@@ -95,7 +101,5 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Row Level Security (simplified for development; adjust for production)
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can read own profile" ON profiles FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
--- Add other policies as needed
+-- The backend uses SUPABASE_SERVICE_ROLE_KEY, so RLS can stay disabled while developing.
+-- Enable and add policies before exposing direct browser access to these tables.

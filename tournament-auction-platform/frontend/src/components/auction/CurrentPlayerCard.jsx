@@ -15,7 +15,7 @@ export default function CurrentPlayerCard({ player, currentBid }) {
         className="w-32 h-32 rounded-full mx-auto object-cover border-4 border-cyan-400 shadow-glow"
       />
       <h2 className="text-3xl font-bold mt-4">{player.full_name}</h2>
-      <p className="text-xl text-gray-300">{player.position} • {player.skill_rating} rating</p>
+      <p className="text-xl text-gray-300">{player.position || 'N/A'}</p>
       <p className="text-2xl text-cyan-400 mt-2">Current Bid: {currentBid} pts</p>
     </motion.div>
   );
