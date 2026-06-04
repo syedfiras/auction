@@ -42,6 +42,7 @@ const allowedOrigins = [
   ...(process.env.FRONTEND_URLS || '').split(',').map(url => url.trim()),
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  'https://auction-football.netlify.app',
 ].filter(Boolean);
 
 const corsOptions = {
