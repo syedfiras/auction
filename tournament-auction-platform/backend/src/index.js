@@ -51,6 +51,7 @@ const corsOptions = {
     }
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 };
 
@@ -59,6 +60,7 @@ const io = new Server(httpServer, {
 });
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
