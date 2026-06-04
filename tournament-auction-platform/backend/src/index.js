@@ -39,10 +39,10 @@ const app = express();
 const httpServer = createServer(app);
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  ...(process.env.FRONTEND_URLS || '').split(','),
+  ...(process.env.FRONTEND_URLS || '').split(',').map(url => url.trim()),
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-].map(origin => origin?.trim()).filter(Boolean);
+].filter(Boolean);
 
 const corsOptions = {
   origin(origin, callback) {
