@@ -12,6 +12,7 @@ export default function CaptainBidPanel({ tournamentId }) {
     myTeamId,
     remainingPoints,
   } = useAuctionStore();
+  
   const [bidAmount, setBidAmount] = useState(0);
   const socket = getSocket();
 
@@ -19,8 +20,25 @@ export default function CaptainBidPanel({ tournamentId }) {
     setBidAmount(currentBid + 10);
   }, [currentBid]);
 
+  useEffect(() => {
+    if (!socket) return;
+    const handleBidRejected = (msg) => {
+      alert(`Bid Rejected: ${msg}`);
+    };
+    socket.on('bidRejected', handleBidRejected);
+    socket.on('error', handleBidRejected); // also listen to standard error
+    return () => {
+      socket.off('bidRejected', handleBidRejected);
+      socket.off('error', handleBidRejected);
+    };
+  }, [socket]);
+
   const handleBid = () => {
     if (!socket) return;
+    if (!myTeamId) {
+      alert('Error: Team ID not found. Please refresh the page if you were just made a captain.');
+      return;
+    }
     if (bidAmount > remainingPoints) {
       alert('Insufficient points');
       return;

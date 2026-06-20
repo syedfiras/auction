@@ -6,6 +6,7 @@ import PlayerApproval from '../components/dashboard/PlayerApproval';
 import TeamManagement from '../components/dashboard/TeamManagement';
 import TournamentSetup from '../components/dashboard/TournamentSetup';
 import PlayerCaptainList from '../components/dashboard/PlayerCaptainList';
+import { initSocket } from '../services/socket';
 
 export default function AdminDashboard() {
   const [tournament, setTournament] = useState(null);
@@ -33,6 +34,23 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchTournament();
     fetchPendingPlayers();
+
+    const socket = initSocket();
+    if (socket) {
+      const handleUpdate = () => {
+        fetchPendingPlayers();
+      };
+
+      socket.on('playerRegistered', handleUpdate);
+      socket.on('playerApproved', handleUpdate);
+      socket.on('playerRejected', handleUpdate);
+
+      return () => {
+        socket.off('playerRegistered', handleUpdate);
+        socket.off('playerApproved', handleUpdate);
+        socket.off('playerRejected', handleUpdate);
+      };
+    }
   }, [fetchTournament, fetchPendingPlayers]);
 
   const handleCleanup = async () => {

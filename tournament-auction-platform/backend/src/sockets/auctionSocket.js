@@ -1,6 +1,7 @@
 import AuctionEngine from '../services/auctionEngine.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import { supabase } from '../config/db.js';
 dotenv.config();
 
 const activeAuctions = new Map();
@@ -21,7 +22,19 @@ export default function (io) {
     if (!token) return next(new Error('Authentication error'));
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      socket.user = decoded;
+      
+      // Fetch fresh profile from database to get the latest role
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, email, role, full_name')
+        .eq('id', decoded.id)
+        .maybeSingle();
+        
+      if (error || !profile) {
+        return next(new Error('User not found'));
+      }
+      
+      socket.user = profile;
       next();
     } catch (err) {
       next(new Error('Invalid token'));
@@ -31,6 +44,7 @@ export default function (io) {
   io.on('connection', (socket) => {
     const { user } = socket;
     const role = user.role;
+    console.log(`[Socket Connected] User: ${user.email}, Role: ${role}, ID: ${user.id}`);
     socket.join(`user_${user.id}`);
 
     socket.on('joinAuctionRoom', async ({ tournamentId, teamId }) => {
@@ -50,6 +64,7 @@ export default function (io) {
     });
 
     socket.on('placeBid', async ({ tournamentId, bidAmount, teamId }) => {
+      console.log(`[placeBid] User: ${user.email}, Role: ${role}, Team: ${teamId}, Bid: ${bidAmount}`);
       if (role !== 'captain') return socket.emit('error', 'Only captains can bid');
       const engine = activeAuctions.get(tournamentId);
       if (!engine) return socket.emit('error', 'Auction not active');

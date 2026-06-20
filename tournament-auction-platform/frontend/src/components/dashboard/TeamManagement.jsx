@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import { initSocket } from '../../services/socket';
 
 export default function TeamManagement({ tournamentId, tournamentStatus }) {
   const [teams, setTeams] = useState([]);
@@ -11,6 +12,17 @@ export default function TeamManagement({ tournamentId, tournamentStatus }) {
   useEffect(() => {
     fetchTeams();
     fetchCaptains();
+
+    const socket = initSocket();
+    if (socket) {
+      const handlePlayerSold = () => {
+        fetchTeams();
+      };
+      socket.on('playerSold', handlePlayerSold);
+      return () => {
+        socket.off('playerSold', handlePlayerSold);
+      };
+    }
   }, [tournamentId]);
 
   const fetchTeams = async () => {

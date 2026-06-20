@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { api } from '../../services/api';
+import { initSocket } from '../../services/socket';
 
 export default function PlayerCaptainList({ tournamentId }) {
   const [tab, setTab] = useState('players');
@@ -12,6 +13,26 @@ export default function PlayerCaptainList({ tournamentId }) {
   useEffect(() => {
     if (tab === 'players') fetchPlayers();
     else fetchCaptains();
+
+    const socket = initSocket();
+    if (socket) {
+      const handleUpdate = () => {
+        if (tab === 'players') fetchPlayers();
+        else fetchCaptains();
+      };
+
+      socket.on('playerApproved', handleUpdate);
+      socket.on('playerRegistered', handleUpdate);
+      socket.on('playerSold', handleUpdate);
+      socket.on('playerUnsold', handleUpdate);
+
+      return () => {
+        socket.off('playerApproved', handleUpdate);
+        socket.off('playerRegistered', handleUpdate);
+        socket.off('playerSold', handleUpdate);
+        socket.off('playerUnsold', handleUpdate);
+      };
+    }
   }, [tab, tournamentId]);
 
   const fetchPlayers = async () => {

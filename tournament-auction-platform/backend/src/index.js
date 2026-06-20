@@ -15,8 +15,8 @@ import authRoutes from './routes/auth.js';
 dotenv.config();
 
 async function seedAdmin() {
-  const email = process.env.ADMIN_EMAIL || 'admin@gmail.com';
-  const password = process.env.ADMIN_PASSWORD || 'password123';
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
   try {
     const existing = await must(await supabase
       .from('profiles')

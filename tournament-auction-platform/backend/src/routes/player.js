@@ -54,6 +54,9 @@ router.post('/register', upload.single('photo'), async (req, res) => {
     })
     .select('*')
     .single());
+
+  req.app.get('io')?.emit('playerRegistered', player);
+
   res.json(player);
 });
 
