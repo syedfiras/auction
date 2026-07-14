@@ -131,7 +131,7 @@ router.get('/captains', async (req, res) => {
     .from('players')
     .select('registered_by')
     .eq('tournament_id', tournamentId)
-    .not('status', 'in', '("rejected","captain")')
+    .eq('status', 'approved')
     .not('registered_by', 'is', null));
   const profileIds = [...new Set(registeredPlayers.map(player => player.registered_by))]
     .filter(id => !assigned.has(id));
@@ -163,6 +163,19 @@ router.get('/teams', async (req, res) => {
 
 router.post('/teams', async (req, res) => {
   const { name, tournament_id, captain_id } = req.body;
+  if (captain_id) {
+    const captainRegistration = await must(await supabase
+      .from('players')
+      .select('id')
+      .eq('tournament_id', tournament_id)
+      .eq('registered_by', captain_id)
+      .eq('status', 'approved')
+      .maybeSingle());
+    if (!captainRegistration) {
+      return res.status(400).json({ error: 'Captain must be an approved player in this tournament' });
+    }
+  }
+
   const tournament = await must(await supabase
     .from('tournaments')
     .select('points_per_team')
