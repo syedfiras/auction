@@ -43,7 +43,6 @@ export const api = {
   getTeams: (tournamentId) => request(`/api/admin/teams?tournamentId=${tournamentId}`),
   getCaptains: (tournamentId) =>
     request(`/api/admin/captains${tournamentId ? `?tournamentId=${tournamentId}` : ''}`),
-
   // Captain
   getMyTeam: () => request('/api/captain/my-team'),
   getMySquad: () => request('/api/captain/squad'),
@@ -61,4 +60,7 @@ export const api = {
   deletePlayer: (id) => request(`/api/admin/players/${id}`, { method: 'DELETE' }),
   getAllCaptains: (tournamentId) => request(`/api/admin/users/captains${tournamentId ? `?tournamentId=${tournamentId}` : ''}`),
   deleteUser: (id) => request(`/api/admin/users/${id}`, { method: 'DELETE' }),
+  assignPlayer: (id, data) => request(`/api/admin/players/${id}/assign`, { method: 'POST', body: JSON.stringify(data) }),
+  unassignPlayer: (id) => request(`/api/admin/players/${id}/unassign`, { method: 'POST' }),
+  markPlayerUnsold: (id) => request(`/api/admin/players/${id}/mark-unsold`, { method: 'PUT' }),
 };

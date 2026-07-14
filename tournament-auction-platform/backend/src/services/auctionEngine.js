@@ -11,6 +11,7 @@ class AuctionEngine {
     this.timer = 30;
     this.timerInterval = null;
     this.room = `tournament_${tournamentId}`;
+    this.round = 1;
   }
 
   async loadTournamentSettings() {
@@ -22,7 +23,8 @@ class AuctionEngine {
     this.timer = tournament?.timer_seconds ?? 30;
   }
 
-  async start() {
+  async start(round = 1) {
+    this.round = round;
     await this.loadTournamentSettings();
     this.active = true;
     await this.pickRandomPlayer();
@@ -36,18 +38,33 @@ class AuctionEngine {
   }
 
   async pickRandomPlayer() {
+    const statusToPick = this.round === 2 ? 'unsold' : 'approved';
     const players = await must(await supabase
       .from('players')
       .select('*')
       .eq('tournament_id', this.tournamentId)
-      .eq('status', 'approved'));
+      .eq('status', statusToPick));
+
     if (!players || players.length === 0) {
       this.currentPlayer = null;
-      await must(await supabase.from('tournaments').update({ status: 'completed' }).eq('id', this.tournamentId));
-      this.io.to(this.room).emit('auctionCompleted', { reason: 'no_more_players' });
+      
+      const unsoldPlayers = await supabase
+        .from('players')
+        .select('id')
+        .eq('tournament_id', this.tournamentId)
+        .eq('status', 'unsold');
+      const hasUnsold = unsoldPlayers.data && unsoldPlayers.data.length > 0;
+      
+      if (this.round === 2 || !hasUnsold) {
+        await must(await supabase.from('tournaments').update({ status: 'completed' }).eq('id', this.tournamentId));
+        this.io.to(this.room).emit('auctionCompleted', { reason: 'no_more_players' });
+      } else {
+        this.io.to(this.room).emit('roundCompleted', { round: this.round });
+      }
       this.stop();
       return;
     }
+
     const randomIndex = Math.floor(Math.random() * players.length);
     this.currentPlayer = players[randomIndex];
     this.currentBid = 0;
@@ -125,6 +142,109 @@ class AuctionEngine {
     this.io.to(this.room).emit('timerUpdated', this.timer);
   }
 
+  addTime(seconds) {
+    if (!this.active || !this.currentPlayer) return;
+    this.timer += seconds;
+    this.io.to(this.room).emit('timerUpdated', this.timer);
+  }
+
+  async assignActivePlayer(teamId, points) {
+    if (!this.currentPlayer) throw new Error('No active player in auction');
+    
+    const team = await must(await supabase
+      .from('teams')
+      .select('name, remaining_points, tournaments(squad_limit)')
+      .eq('id', teamId)
+      .maybeSingle());
+    if (!team) throw new Error('Team not found');
+    if (team.remaining_points < points) throw new Error('Insufficient points');
+    
+    const { count, error } = await supabase
+      .from('players')
+      .select('id', { count: 'exact', head: true })
+      .eq('sold_to_team', teamId)
+      .eq('status', 'sold');
+    if (error) throw error;
+    if ((count || 0) >= (team.tournaments?.squad_limit || 18)) throw new Error('Squad full');
+    
+    await must(await supabase
+      .from('teams')
+      .update({ remaining_points: team.remaining_points - points })
+      .eq('id', teamId));
+      
+    await must(await supabase
+      .from('players')
+      .update({ status: 'sold', sold_to_team: teamId, sold_price: points })
+      .eq('id', this.currentPlayer.id));
+      
+    await must(await supabase
+      .from('auctions')
+      .insert({
+        tournament_id: this.tournamentId,
+        player_id: this.currentPlayer.id,
+        winning_team_id: teamId,
+        winning_bid: points,
+        status: 'sold',
+        ended_at: new Date().toISOString(),
+      }));
+      
+    const soldPayload = {
+      player: {
+        ...this.currentPlayer,
+        status: 'sold',
+        sold_to_team: teamId,
+        sold_price: points
+      },
+      teamId: teamId,
+      teamName: team.name,
+      price: points,
+    };
+    
+    this.io.to(this.room).emit('playerSold', soldPayload);
+    
+    if (this.currentPlayer.registered_by) {
+      this.io.to(`user_${this.currentPlayer.registered_by}`).emit('playerSoldNotification', {
+        teamName: team.name,
+        price: points,
+      });
+    }
+    
+    this.pause();
+    this.currentPlayer = null;
+    this.highestTeamId = null;
+    this.currentBid = 0;
+    
+    await this.pickRandomPlayer();
+    if (this.currentPlayer) {
+      this.active = true;
+      this.startTimer();
+    }
+    
+    return soldPayload;
+  }
+
+  async markActivePlayerUnsold() {
+    if (!this.currentPlayer) throw new Error('No active player in auction');
+    
+    await must(await supabase
+      .from('players')
+      .update({ status: 'unsold' })
+      .eq('id', this.currentPlayer.id));
+      
+    this.io.to(this.room).emit('playerUnsold', this.currentPlayer);
+    
+    this.pause();
+    this.currentPlayer = null;
+    this.highestTeamId = null;
+    this.currentBid = 0;
+    
+    await this.pickRandomPlayer();
+    if (this.currentPlayer) {
+      this.active = true;
+      this.startTimer();
+    }
+  }
+
   async finalizeCurrentPlayer() {
     if (!this.currentPlayer) return;
     if (this.highestTeamId && this.currentBid > 0) {
@@ -153,7 +273,12 @@ class AuctionEngine {
         }));
       const teamName = team.name;
       const soldPayload = {
-        player: this.currentPlayer,
+        player: {
+          ...this.currentPlayer,
+          status: 'sold',
+          sold_to_team: this.highestTeamId,
+          sold_price: this.currentBid
+        },
         teamId: this.highestTeamId,
         teamName,
         price: this.currentBid,
@@ -204,4 +329,3 @@ class AuctionEngine {
 }
 
 export default AuctionEngine;
-

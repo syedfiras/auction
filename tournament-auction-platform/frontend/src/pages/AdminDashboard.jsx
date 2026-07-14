@@ -113,6 +113,10 @@ export default function AdminDashboard() {
               tournamentId={tournament?.id}
               disabled={tournament?.status !== 'active'}
               onAuctionEnded={fetchTournament}
+              onDataDeleted={() => {
+                setTournament(null);
+                setPendingPlayers([]);
+              }}
             />
             <PlayerApproval
               players={pendingPlayers}

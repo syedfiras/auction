@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { supabase } from '../config/db.js';
 dotenv.config();
 
-const activeAuctions = new Map();
+export const activeAuctions = new Map();
 
 function getOrCreateEngine(io, socket, tournamentId) {
   let engine = activeAuctions.get(tournamentId);
@@ -75,7 +75,7 @@ export default function (io) {
       }
     });
 
-    socket.on('admin:startAuction', async ({ tournamentId }) => {
+    socket.on('admin:startAuction', async ({ tournamentId, round }) => {
       if (role !== 'admin') {
         return socket.emit('auctionError', 'Only admins can start the auction');
       }
@@ -87,14 +87,22 @@ export default function (io) {
         if (engine.active) {
           return socket.emit('auctionError', 'Auction is already running');
         }
-        const started = await engine.start();
+        const started = await engine.start(round || 1);
         if (!started) {
-          return socket.emit('auctionError', 'No approved players available for auction');
+          return socket.emit('auctionError', `No players available for auction in Round ${round || 1}`);
         }
         io.to(`tournament_${tournamentId}`).emit('auctionStarted');
       } catch (err) {
         console.error('startAuction failed:', err);
         socket.emit('auctionError', err.message || 'Failed to start auction');
+      }
+    });
+
+    socket.on('admin:addTime', ({ tournamentId, seconds }) => {
+      if (role !== 'admin') return;
+      const engine = activeAuctions.get(tournamentId);
+      if (engine) {
+        engine.addTime(seconds || 5);
       }
     });
 

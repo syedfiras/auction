@@ -65,7 +65,7 @@ export default function CaptainDashboard() {
   if (!tournamentId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
-        <div className="text-slate-700 text-xl">Loading auction...</div>
+        <div className="text-slate-700 text-xl font-semibold">Loading tournament details...</div>
       </div>
     );
   }
@@ -78,10 +78,6 @@ export default function CaptainDashboard() {
             <CaptainBidPanel tournamentId={tournamentId} />
           </div>
           <div className="space-y-4">
-            <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
-              <p className="text-sm text-slate-500 uppercase tracking-wider">Remaining Points</p>
-              <p className="text-4xl font-mono font-semibold text-slate-950 mt-1">{remainingPoints}</p>
-            </div>
             <SquadList squad={squad} />
           </div>
         </motion.div>

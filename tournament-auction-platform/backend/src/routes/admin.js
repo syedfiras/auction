@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { supabase, must } from '../config/db.js';
+import { activeAuctions } from '../sockets/auctionSocket.js';
 
 const router = express.Router();
 router.use(authenticate);
@@ -258,6 +259,175 @@ router.delete('/tournaments/:id/cleanup', async (req, res) => {
   }
 
   res.json({ message: 'Tournament data and all non-admin profiles wiped clean.' });
+});
+
+router.post('/players/:id/assign', async (req, res) => {
+  const { id } = req.params;
+  const { team_id, points } = req.body;
+  if (!team_id || points === undefined || points === null || points < 0) {
+    return res.status(400).json({ error: 'team_id and non-negative points are required' });
+  }
+
+  try {
+    const player = await must(await supabase.from('players').select('*').eq('id', id).maybeSingle());
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+
+    const engine = activeAuctions.get(player.tournament_id);
+    if (engine && engine.currentPlayer && engine.currentPlayer.id === id) {
+      const soldPayload = await engine.assignActivePlayer(team_id, points);
+      const updatedTeam = await must(await supabase.from('teams').select('*').eq('id', team_id).single());
+      return res.json({ player: soldPayload.player, team: updatedTeam });
+    }
+
+    const team = await must(await supabase.from('teams').select('*, tournaments(squad_limit)').eq('id', team_id).maybeSingle());
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+
+    if (team.remaining_points < points) {
+      return res.status(400).json({ error: 'Insufficient team points' });
+    }
+
+    const { count, error: countErr } = await supabase
+      .from('players')
+      .select('id', { count: 'exact', head: true })
+      .eq('sold_to_team', team_id)
+      .eq('status', 'sold');
+    if (countErr) throw countErr;
+
+    if ((count || 0) >= (team.tournaments?.squad_limit || 18)) {
+      return res.status(400).json({ error: 'Squad is full' });
+    }
+
+    const updatedTeam = await must(await supabase
+      .from('teams')
+      .update({ remaining_points: team.remaining_points - points })
+      .eq('id', team_id)
+      .select('*')
+      .single());
+
+    const updatedPlayer = await must(await supabase
+      .from('players')
+      .update({ status: 'sold', sold_to_team: team_id, sold_price: points })
+      .eq('id', id)
+      .select('*')
+      .single());
+
+    await must(await supabase
+      .from('auctions')
+      .insert({
+        tournament_id: player.tournament_id,
+        player_id: player.id,
+        winning_team_id: team_id,
+        winning_bid: points,
+        status: 'sold',
+        ended_at: new Date().toISOString(),
+      }));
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`tournament_${player.tournament_id}`).emit('playerSold', {
+        player: updatedPlayer,
+        teamId: team_id,
+        teamName: team.name,
+        price: points,
+      });
+    }
+
+    res.json({ player: updatedPlayer, team: updatedTeam });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/players/:id/unassign', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const player = await must(await supabase.from('players').select('*').eq('id', id).maybeSingle());
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+    if (player.status !== 'sold' || !player.sold_to_team) {
+      return res.status(400).json({ error: 'Player is not assigned to any team' });
+    }
+
+    const team = await must(await supabase.from('teams').select('*').eq('id', player.sold_to_team).maybeSingle());
+    let updatedTeam = null;
+    if (team) {
+      updatedTeam = await must(await supabase
+        .from('teams')
+        .update({ remaining_points: team.remaining_points + player.sold_price })
+        .eq('id', player.sold_to_team)
+        .select('*')
+        .single());
+    }
+
+    const updatedPlayer = await must(await supabase
+      .from('players')
+      .update({ status: 'approved', sold_to_team: null, sold_price: null })
+      .eq('id', id)
+      .select('*')
+      .single());
+
+    await supabase.from('auctions').delete().eq('player_id', id);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`tournament_${player.tournament_id}`).emit('playerUnsold', updatedPlayer);
+      io.to(`tournament_${player.tournament_id}`).emit('playerSold', {
+        player: updatedPlayer,
+        teamId: null,
+        teamName: null,
+        price: 0,
+      });
+    }
+
+    res.json({ player: updatedPlayer, team: updatedTeam });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/players/:id/mark-unsold', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const player = await must(await supabase.from('players').select('*').eq('id', id).maybeSingle());
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+
+    const engine = activeAuctions.get(player.tournament_id);
+    if (engine && engine.currentPlayer && engine.currentPlayer.id === id) {
+      await engine.markActivePlayerUnsold();
+      const updatedPlayer = await must(await supabase.from('players').select('*').eq('id', id).single());
+      return res.json({ player: updatedPlayer, team: null });
+    }
+
+    let updatedTeam = null;
+    if (player.status === 'sold' && player.sold_to_team) {
+      const team = await must(await supabase.from('teams').select('*').eq('id', player.sold_to_team).maybeSingle());
+      if (team) {
+        updatedTeam = await must(await supabase
+          .from('teams')
+          .update({ remaining_points: team.remaining_points + player.sold_price })
+          .eq('id', player.sold_to_team)
+          .select('*')
+          .single());
+      }
+    }
+
+    const updatedPlayer = await must(await supabase
+      .from('players')
+      .update({ status: 'unsold', sold_to_team: null, sold_price: null })
+      .eq('id', id)
+      .select('*')
+      .single());
+
+    await supabase.from('auctions').delete().eq('player_id', id);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`tournament_${player.tournament_id}`).emit('playerUnsold', updatedPlayer);
+    }
+
+    res.json({ player: updatedPlayer, team: updatedTeam });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
