@@ -196,7 +196,7 @@ export default function Viewer() {
                       <img
                         src={activePlayer.photo_url || playerPlaceholder}
                         alt={activePlayer.full_name}
-                        className="w-36 h-36 md:w-44 md:h-44 rounded-2xl object-cover border-4 border-cyan-400 shadow-xl relative z-10"
+                        className="w-44 h-44 md:w-56 md:h-56 rounded-2xl object-cover border-4 border-cyan-400 shadow-xl relative z-10"
                       />
                     </div>
                     
@@ -251,7 +251,7 @@ export default function Viewer() {
                       <img
                         src={recentAssignments[0].photo_url || soldPlaceholder}
                         alt={recentAssignments[0].full_name}
-                        className="w-28 h-28 md:w-36 md:h-36 rounded-2xl object-cover border-4 border-emerald-400 shadow-lg shadow-emerald-500/10"
+                        className="w-36 h-36 md:w-44 md:h-44 rounded-2xl object-cover border-4 border-emerald-400 shadow-lg shadow-emerald-500/10"
                       />
                     </div>
                     <h2 className="text-2xl md:text-4xl font-extrabold mt-4 text-white tracking-tight uppercase">{recentAssignments[0].full_name}</h2>
@@ -276,7 +276,7 @@ export default function Viewer() {
                             <img
                               src={p.photo_url || playerPlaceholder}
                               alt={p.full_name}
-                              className="w-10 h-10 rounded-lg object-cover border-2 border-cyan-400"
+                              className="w-12 h-12 rounded-lg object-cover border-2 border-cyan-400"
                             />
                             <div className="min-w-0 flex-1">
                               <p className="font-bold text-xs truncate text-white">{p.full_name}</p>

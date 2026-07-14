@@ -17,7 +17,7 @@ export default function Register() {
     setError('');
     try {
       await signUp(email, password, { full_name: fullName });
-      navigate('/login');
+      navigate('/player', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
