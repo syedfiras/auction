@@ -435,6 +435,9 @@ router.put('/players/:id/mark-unsold', async (req, res) => {
     const io = req.app.get('io');
     if (io) {
       io.to(`tournament_${player.tournament_id}`).emit('playerUnsold', updatedPlayer);
+      if (updatedPlayer.registered_by) {
+        io.to(`user_${updatedPlayer.registered_by}`).emit('playerStatusUpdated');
+      }
     }
 
     res.json({ player: updatedPlayer, team: updatedTeam });

@@ -38,7 +38,11 @@ export default function PlayerDashboard() {
     if (!socket) return;
     const refresh = () => fetchRegistration();
     socket.on('playerSoldNotification', refresh);
-    return () => socket.off('playerSoldNotification', refresh);
+    socket.on('playerStatusUpdated', refresh);
+    return () => {
+      socket.off('playerSoldNotification', refresh);
+      socket.off('playerStatusUpdated', refresh);
+    };
   }, []);
 
   if (loading) {

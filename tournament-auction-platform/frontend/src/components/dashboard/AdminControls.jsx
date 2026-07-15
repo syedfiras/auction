@@ -190,6 +190,8 @@ export default function AdminControls({ tournamentId, disabled, onAuctionEnded, 
   const approvedPlayers = players.filter(p => p.status === 'approved').length;
   const unsoldPlayers = players.filter(p => p.status === 'unsold').length;
   const soldPlayers = players.filter(p => p.status === 'sold').length;
+  const canStartSelectedRound = tournament?.status === 'active'
+    || (selectedRound === 2 && unsoldPlayers > 0);
 
   const totalPointsPool = teams.length * (tournament?.points_per_team || 1000);
   const remainingPointsPool = teams.reduce((acc, t) => acc + (t.remaining_points || 0), 0);
@@ -243,10 +245,10 @@ export default function AdminControls({ tournamentId, disabled, onAuctionEnded, 
             
             <button
               onClick={handleStartAuction}
-              disabled={disabled}
+              disabled={disabled && !canStartSelectedRound}
               className="bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 disabled:opacity-50 text-black font-extrabold px-6 py-3 rounded-xl shadow-lg transition duration-200"
             >
-              Start Auction Loop
+              {selectedRound === 2 ? 'Start Unsold Players Auction' : 'Start Auction Loop'}
             </button>
           </div>
         ) : (

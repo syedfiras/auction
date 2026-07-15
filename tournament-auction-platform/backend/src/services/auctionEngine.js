@@ -24,7 +24,27 @@ class AuctionEngine {
   }
 
   async start(round = 1) {
-    this.round = round;
+    this.round = Number(round) === 2 ? 2 : 1;
+
+    const tournament = await must(await supabase
+      .from('tournaments')
+      .select('status')
+      .eq('id', this.tournamentId)
+      .maybeSingle());
+    if (!tournament) throw new Error('Tournament not found');
+    if (tournament.status === 'draft') throw new Error('Activate the tournament before starting an auction');
+
+    // A completed auction can be reopened only to auction players left unsold.
+    // This lets an admin run another unsold-player round without recreating data.
+    if (tournament.status === 'completed' && this.round === 2) {
+      await must(await supabase
+        .from('tournaments')
+        .update({ status: 'active' })
+        .eq('id', this.tournamentId));
+    } else if (tournament.status === 'completed') {
+      throw new Error('Start Round 2 to auction unsold players again');
+    }
+
     await this.loadTournamentSettings();
     this.active = true;
     await this.pickRandomPlayer();
@@ -88,6 +108,12 @@ class AuctionEngine {
         this.io.to(this.room).emit('timerUpdated', this.timer);
       }
     }, 1000);
+  }
+
+  notifyPlayerStatus(player) {
+    if (player?.registered_by) {
+      this.io.to(`user_${player.registered_by}`).emit('playerStatusUpdated');
+    }
   }
 
   async placeBid(teamId, bidAmount, captainId) {
@@ -201,6 +227,7 @@ class AuctionEngine {
     };
     
     this.io.to(this.room).emit('playerSold', soldPayload);
+    this.notifyPlayerStatus(this.currentPlayer);
     
     if (this.currentPlayer.registered_by) {
       this.io.to(`user_${this.currentPlayer.registered_by}`).emit('playerSoldNotification', {
@@ -232,6 +259,7 @@ class AuctionEngine {
       .eq('id', this.currentPlayer.id));
       
     this.io.to(this.room).emit('playerUnsold', this.currentPlayer);
+    this.notifyPlayerStatus(this.currentPlayer);
     
     this.pause();
     this.currentPlayer = null;
@@ -284,6 +312,7 @@ class AuctionEngine {
         price: this.currentBid,
       };
       this.io.to(this.room).emit('playerSold', soldPayload);
+      this.notifyPlayerStatus(this.currentPlayer);
       if (this.currentPlayer.registered_by) {
         this.io.to(`user_${this.currentPlayer.registered_by}`).emit('playerSoldNotification', {
           teamName,
@@ -293,6 +322,7 @@ class AuctionEngine {
     } else {
       await must(await supabase.from('players').update({ status: 'unsold' }).eq('id', this.currentPlayer.id));
       this.io.to(this.room).emit('playerUnsold', this.currentPlayer);
+      this.notifyPlayerStatus(this.currentPlayer);
     }
     this.currentPlayer = null;
     this.highestTeamId = null;
