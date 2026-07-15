@@ -15,8 +15,11 @@ export default function SquadList({ squad }) {
       ) : (
         <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
           {squad.map(player => (
-            <div key={player.id} className="flex justify-between items-center p-2.5 bg-black/30 rounded-lg hover:bg-black/40 transition">
-              <span className="text-sm font-medium truncate mr-2">{player.full_name}</span>
+            <div key={player.id} className="flex justify-between items-center gap-3 p-2.5 bg-black/30 rounded-lg hover:bg-black/40 transition">
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{player.full_name}</p>
+                <p className="text-xs text-gray-400 truncate">{player.phone || 'Phone number unavailable'}</p>
+              </div>
               <span className="text-cyan-400 text-sm font-mono shrink-0">{player.sold_price} pts</span>
             </div>
           ))}
