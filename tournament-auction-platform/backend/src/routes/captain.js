@@ -9,7 +9,7 @@ router.use(requireRole(['captain']));
 router.get('/my-team', async (req, res) => {
   const team = await must(await supabase
     .from('teams')
-    .select('*, tournaments(name)')
+    .select('*, tournaments(name, squad_limit, points_per_team)')
     .eq('captain_id', req.user.id)
     .maybeSingle());
   if (!team) return res.status(404).json({ error: 'Team not found' });

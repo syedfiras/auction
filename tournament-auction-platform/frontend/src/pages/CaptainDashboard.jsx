@@ -18,9 +18,10 @@ export default function CaptainDashboard() {
       try {
         setLoadError(null);
         setLoading(true);
-        const tournament = await api.getActiveTournament();
-        setTournamentId(tournament.id);
+        // The captain's team remains available after an auction is completed.
+        // Load it directly instead of requiring an active tournament.
         const team = await api.getMyTeam();
+        setTournamentId(team.tournament_id);
         setMyTeamId(team.id);
         setRemainingPoints(team.remaining_points);
         const squadData = await api.getMySquad();
