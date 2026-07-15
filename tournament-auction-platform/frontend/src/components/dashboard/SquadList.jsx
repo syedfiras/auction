@@ -18,7 +18,7 @@ export default function SquadList({ squad }) {
             <div key={player.id} className="flex justify-between items-center gap-3 p-2.5 bg-black/30 rounded-lg hover:bg-black/40 transition">
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{player.full_name}</p>
-                <p className="text-xs text-gray-400 truncate">{player.phone || 'Phone number unavailable'}</p>
+                <p className="text-xs text-black truncate">{player.phone || 'Phone number unavailable'}</p>
               </div>
               <span className="text-cyan-400 text-sm font-mono shrink-0">{player.sold_price} pts</span>
             </div>
