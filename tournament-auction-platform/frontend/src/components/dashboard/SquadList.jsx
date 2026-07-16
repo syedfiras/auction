@@ -1,4 +1,4 @@
-export default function SquadList({ squad }) {
+export default function SquadList({ squad, captainName }) {
   return (
     <div className="bg-white/5 backdrop-blur-xl p-4 rounded-xl border border-cyan-500/20">
       <div className="flex items-center gap-2 mb-3">
@@ -10,6 +10,11 @@ export default function SquadList({ squad }) {
           </span>
         )}
       </div>
+      {captainName && (
+        <p className="mb-3 text-sm text-slate-400">
+          Captain: <span className="font-medium text-white">{captainName}</span>
+        </p>
+      )}
       {squad.length === 0 ? (
         <p className="text-gray-500 text-sm text-center py-6">No players bought yet.</p>
       ) : (

@@ -9,6 +9,7 @@ import { api } from '../services/api';
 
 export default function CaptainDashboard() {
   const [tournamentId, setTournamentId] = useState(null);
+  const [captainName, setCaptainName] = useState('');
   const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(true);
   const { remainingPoints, squad, setMyTeamId, setRemainingPoints, setSquad } = useAuctionStore();
@@ -22,6 +23,7 @@ export default function CaptainDashboard() {
         // Load it directly instead of requiring an active tournament.
         const team = await api.getMyTeam();
         setTournamentId(team.tournament_id);
+        setCaptainName(team.captain_name || 'Captain');
         setMyTeamId(team.id);
         setRemainingPoints(team.remaining_points);
         const squadData = await api.getMySquad();
@@ -79,7 +81,7 @@ export default function CaptainDashboard() {
             <CaptainBidPanel tournamentId={tournamentId} />
           </div>
           <div className="space-y-4">
-            <SquadList squad={squad} />
+            <SquadList squad={squad} captainName={captainName} />
           </div>
         </motion.div>
       </div>

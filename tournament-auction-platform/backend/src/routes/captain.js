@@ -13,7 +13,11 @@ router.get('/my-team', async (req, res) => {
     .eq('captain_id', req.user.id)
     .maybeSingle());
   if (!team) return res.status(404).json({ error: 'Team not found' });
-  res.json({ ...team, tournament_name: team.tournaments?.name });
+  res.json({
+    ...team,
+    tournament_name: team.tournaments?.name,
+    captain_name: req.user.full_name,
+  });
 });
 
 router.get('/squad', async (req, res) => {
