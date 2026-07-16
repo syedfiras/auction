@@ -18,7 +18,7 @@ export default function SquadList({ squad }) {
             <div key={player.id} className="flex justify-between items-center gap-3 p-2.5 bg-black/30 rounded-lg hover:bg-black/40 transition">
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{player.full_name}</p>
-                <p className="text-xs text-slate-400 truncate">
+                <p className="text-xs text-black truncate">
                   {player.position || 'Position unavailable'} &middot; Age: {player.age ?? 'N/A'} &middot; {player.phone || 'Phone unavailable'}
                 </p>
               </div>
