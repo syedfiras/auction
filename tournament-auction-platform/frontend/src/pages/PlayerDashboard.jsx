@@ -15,15 +15,23 @@ const STATUS_CONFIG = {
 
 export default function PlayerDashboard() {
   const [registration, setRegistration] = useState(null);
+  const [teammates, setTeammates] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchRegistration = async () => {
     try {
       const data = await api.getMyRegistration();
       setRegistration(data || null);
+      if (data?.status === 'sold') {
+        const teammateData = await api.getMyTeammates();
+        setTeammates(teammateData);
+      } else {
+        setTeammates([]);
+      }
     } catch (err) {
       console.error(err);
       setRegistration(null);
+      setTeammates([]);
     } finally {
       setLoading(false);
     }
@@ -82,17 +90,42 @@ export default function PlayerDashboard() {
                 </div>
               </div>
               {registration.status === 'sold' && registration.team_name && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-lg font-semibold text-blue-700">Congratulations</p>
-                  <p className="mt-1">
-                    Bought by <span className="text-slate-950 font-semibold">{registration.team_name}</span>
-                  </p>
-                  {registration.sold_price != null && (
-                    <p className="text-slate-600 mt-1">
-                      Sold for <span className="text-slate-950 font-semibold">{registration.sold_price}</span> points
+                <>
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-lg font-semibold text-blue-700">Congratulations</p>
+                    <p className="mt-1">
+                      Bought by <span className="text-slate-950 font-semibold">{registration.team_name}</span>
                     </p>
-                  )}
-                </div>
+                    {registration.sold_price != null && (
+                      <p className="text-slate-600 mt-1">
+                        Sold for <span className="text-slate-950 font-semibold">{registration.sold_price}</span> points
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-4">
+                    <h3 className="text-base font-semibold text-slate-950">Teammates</h3>
+                    {teammates.length > 0 ? (
+                      <div className="mt-2 divide-y divide-slate-100 rounded-md border border-slate-200">
+                        {teammates.map((teammate) => (
+                          <div key={teammate.id} className="flex items-center gap-3 p-3">
+                            {teammate.photo_url && (
+                              <img src={teammate.photo_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-950 truncate">{teammate.full_name}</p>
+                              <p className="text-sm text-slate-500">
+                                {teammate.position || 'Position unavailable'} &middot; Age: {teammate.age ?? 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-slate-500">Your team has no other players yet.</p>
+                    )}
+                  </div>
+                </>
               )}
               {st.msg && <p className={`mt-3 ${st.color} text-sm`}>{st.msg}</p>}
             </div>

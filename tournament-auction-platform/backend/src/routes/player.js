@@ -71,4 +71,27 @@ router.get('/my-registration', async (req, res) => {
   res.json(player ? { ...player, team_name: player.teams?.name || null } : null);
 });
 
+router.get('/my-teammates', async (req, res) => {
+  const player = await must(await supabase
+    .from('players')
+    .select('id, sold_to_team')
+    .eq('registered_by', req.user.id)
+    .eq('status', 'sold')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle());
+
+  if (!player?.sold_to_team) return res.json([]);
+
+  const teammates = await must(await supabase
+    .from('players')
+    .select('id, full_name, age, position, photo_url')
+    .eq('sold_to_team', player.sold_to_team)
+    .eq('status', 'sold')
+    .neq('id', player.id)
+    .order('full_name'));
+
+  res.json(teammates);
+});
+
 export default router;

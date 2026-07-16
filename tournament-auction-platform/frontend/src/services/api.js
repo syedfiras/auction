@@ -50,6 +50,7 @@ export const api = {
   // Player
   registerPlayer: (data) => request('/api/player/register', { method: 'POST', body: data }),
   getMyRegistration: () => request('/api/player/my-registration'),
+  getMyTeammates: () => request('/api/player/my-teammates'),
 
   // Tournament
   getActiveTournament: () => request('/api/tournaments/active'),
