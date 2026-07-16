@@ -19,7 +19,7 @@ export default function SquadList({ squad }) {
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{player.full_name}</p>
                 <p className="text-xs text-slate-400 truncate">
-                  {player.position || 'Position unavailable'} &middot; Age: {player.age ?? 'N/A'}
+                  {player.position || 'Position unavailable'} &middot; Age: {player.age ?? 'N/A'} &middot; {player.phone || 'Phone unavailable'}
                 </p>
               </div>
               <span className="text-cyan-400 text-sm font-mono shrink-0">{player.sold_price} pts</span>
