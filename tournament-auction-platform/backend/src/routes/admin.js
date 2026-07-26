@@ -253,6 +253,11 @@ router.delete('/users/:id', async (req, res) => {
 
 router.delete('/tournaments/:id/cleanup', async (req, res) => {
   const { id } = req.params;
+  const engine = activeAuctions.get(id);
+  if (engine) {
+    engine.stop();
+    activeAuctions.delete(id);
+  }
   const auctions = await must(await supabase.from('auctions').select('id').eq('tournament_id', id));
   const auctionIds = auctions.map(auction => auction.id);
   if (auctionIds.length > 0) await must(await supabase.from('bids').delete().in('auction_id', auctionIds));

@@ -14,8 +14,6 @@ export default function Viewer() {
   
   // Live auction states
   const [activePlayer, setActivePlayer] = useState(null);
-  const [timer, setTimer] = useState(30);
-  const [isActive, setIsActive] = useState(false);
   
   const fullscreenRef = useRef(null);
 
@@ -46,23 +44,18 @@ export default function Viewer() {
 
         socket.on('randomPlayerSelected', (player) => {
           setActivePlayer(player);
-          setIsActive(true);
-        });
-
-        socket.on('timerUpdated', (time) => {
-          setTimer(time);
         });
 
         socket.on('auctionStarted', () => {
-          setIsActive(true);
+          // auction started
         });
 
         socket.on('auctionPaused', () => {
-          setIsActive(false);
+          // auction paused
         });
 
         socket.on('auctionResumed', () => {
-          setIsActive(true);
+          // auction resumed
         });
 
         socket.on('auctionCompleted', () => {
@@ -215,19 +208,6 @@ export default function Viewer() {
                       </div>
                       <div className="bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-xl text-xs">
                         <span className="text-gray-400">Mobile:</span> <span className="font-bold">{activePlayer.phone || 'N/A'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Countdown Timer Block at the bottom */}
-                  <div className="mt-auto pt-6 border-t border-white/10 flex items-center justify-between z-10">
-                    <span className="text-gray-400 text-sm font-semibold">Physical bidding is active in the room...</span>
-                    
-                    {/* Pulsing Timer Button style */}
-                    <div className="flex items-center gap-3">
-                      <span className="text-gray-400 text-xs font-bold uppercase tracking-wider">Timer</span>
-                      <div className={`text-4xl md:text-5xl font-mono font-black px-5 py-2.5 rounded-2xl bg-black/40 border ${timer <= 5 ? 'text-red-500 border-red-500/40 animate-pulse' : 'text-cyan-400 border-cyan-500/20'}`}>
-                        {timer}s
                       </div>
                     </div>
                   </div>

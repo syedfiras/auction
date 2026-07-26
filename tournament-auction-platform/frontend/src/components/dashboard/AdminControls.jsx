@@ -210,11 +210,11 @@ export default function AdminControls({ tournamentId, disabled, onAuctionEnded, 
           {socketStatus && <span className="text-xs bg-cyan-950 text-cyan-400 px-3 py-1 rounded-full border border-cyan-500/30 font-mono">{socketStatus}</span>}
         </div>
 
-        {tournament?.status === 'completed' && (
+        {tournament && (
           <div className="mb-4 bg-red-950/35 border border-red-500/30 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-bold text-red-200 uppercase tracking-wide">Auction ended</p>
-              <p className="text-xs text-red-100/70 mt-0.5">Delete all database data for this auction before starting fresh.</p>
+              <p className="text-sm font-bold text-red-200 uppercase tracking-wide">Danger Zone</p>
+              <p className="text-xs text-red-100/70 mt-0.5">Delete all database data for this tournament and start fresh.</p>
             </div>
             <button
               onClick={handleDeleteAllData}
@@ -252,68 +252,36 @@ export default function AdminControls({ tournamentId, disabled, onAuctionEnded, 
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
-            {/* Column 1: Active Player Info */}
-            <div className="bg-black/35 p-4 rounded-xl border border-white/5 flex flex-col items-center text-center">
-              <div className="relative">
-                <img
-                  src={currentPlayer.photo_url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Ccircle cx="100" cy="100" r="90" fill="%23333" stroke="%2300cccc" stroke-width="6"/%3E%3Ctext x="100" y="115" text-anchor="middle" fill="%2300cccc" font-size="60"%3E👤%3C/text%3E%3C/svg%3E'}
-                  alt={currentPlayer.full_name}
-                  className="w-24 h-24 rounded-full object-cover border-2 border-cyan-400 shadow-md"
-                />
-                <span className="absolute bottom-0 right-0 bg-cyan-500 text-black text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">
-                  {currentPlayer.position || 'Player'}
-                </span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+            {/* Column 1: Active Player Info & General Controls */}
+            <div className="bg-black/35 p-4 rounded-xl border border-white/5 flex flex-col items-center text-center justify-between">
+              <div className="flex flex-col items-center text-center">
+                <div className="relative">
+                  <img
+                    src={currentPlayer.photo_url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Ccircle cx="100" cy="100" r="90" fill="%23333" stroke="%2300cccc" stroke-width="6"/%3E%3Ctext x="100" y="115" text-anchor="middle" fill="%2300cccc" font-size="60"%3E👤%3C/text%3E%3C/svg%3E'}
+                    alt={currentPlayer.full_name}
+                    className="w-24 h-24 rounded-full object-cover border-2 border-cyan-400 shadow-md"
+                  />
+                  <span className="absolute bottom-0 right-0 bg-cyan-500 text-black text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">
+                    {currentPlayer.position || 'Player'}
+                  </span>
+                </div>
+                <h4 className="text-lg font-bold mt-3 text-white truncate max-w-full">{currentPlayer.full_name}</h4>
               </div>
-              <h4 className="text-lg font-bold mt-3 text-white truncate max-w-full">{currentPlayer.full_name}</h4>
               
-              <div className="mt-4 flex gap-2 w-full">
+              <div className="mt-6 flex flex-col gap-2 w-full">
                 <button
                   onClick={handleMarkUnsold}
-                  className="flex-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs py-2 rounded-lg font-semibold transition"
+                  className="w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs py-2.5 rounded-lg font-semibold transition"
                 >
                   Send to Unsold
                 </button>
-              </div>
-            </div>
-
-            {/* Column 2: Timer & State Controller */}
-            <div className="bg-black/35 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center text-center relative">
-              <p className="text-xs uppercase tracking-wider font-semibold text-gray-400">Countdown Timer</p>
-              
-              <div className={`text-5xl md:text-6xl font-mono font-extrabold my-3 tracking-wider ${timer <= 5 ? 'text-red-500 animate-pulse' : 'text-cyan-400'}`}>
-                {timer}s
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-2 w-full mt-2">
-                {isActive ? (
-                  <button
-                    onClick={handlePause}
-                    className="bg-yellow-500 hover:bg-yellow-400 text-black text-xs px-3 py-1.5 rounded-lg font-bold transition"
-                  >
-                    Pause
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleResume}
-                    className="bg-green-500 hover:bg-green-400 text-black text-xs px-3 py-1.5 rounded-lg font-bold transition"
-                  >
-                    Resume
-                  </button>
-                )}
-                
                 <button
-                  onClick={handleAddTime}
-                  className="bg-cyan-500 hover:bg-cyan-400 text-black text-xs px-3 py-1.5 rounded-lg font-extrabold transition flex items-center gap-1"
-                >
-                  +5s
-                </button>
-
-                <button
+                  type="button"
                   onClick={handleEndAuction}
-                  className="bg-red-600 hover:bg-red-500 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition"
+                  className="w-full bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 text-xs py-2.5 rounded-lg font-bold transition"
                 >
-                  Stop
+                  End Tournament Auction
                 </button>
               </div>
             </div>

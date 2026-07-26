@@ -12,6 +12,7 @@ class AuctionEngine {
     this.timerInterval = null;
     this.room = `tournament_${tournamentId}`;
     this.round = 1;
+    this.auctionedInRound = new Set();
   }
 
   async loadTournamentSettings() {
@@ -25,6 +26,7 @@ class AuctionEngine {
 
   async start(round = 1) {
     this.round = Number(round) === 2 ? 2 : 1;
+    this.auctionedInRound = new Set();
 
     const tournament = await must(await supabase
       .from('tournaments')
@@ -59,11 +61,15 @@ class AuctionEngine {
 
   async pickRandomPlayer() {
     const statusToPick = this.round === 2 ? 'unsold' : 'approved';
-    const players = await must(await supabase
+    let players = await must(await supabase
       .from('players')
       .select('*')
       .eq('tournament_id', this.tournamentId)
       .eq('status', statusToPick));
+
+    if (this.round === 2) {
+      players = players.filter(p => !this.auctionedInRound.has(p.id));
+    }
 
     if (!players || players.length === 0) {
       this.currentPlayer = null;
@@ -87,6 +93,7 @@ class AuctionEngine {
 
     const randomIndex = Math.floor(Math.random() * players.length);
     this.currentPlayer = players[randomIndex];
+    this.auctionedInRound.add(this.currentPlayer.id);
     this.currentBid = 0;
     this.highestTeamId = null;
     this.previousHighestTeamId = null;
@@ -97,17 +104,7 @@ class AuctionEngine {
   }
 
   startTimer() {
-    if (this.timerInterval) clearInterval(this.timerInterval);
-    this.timerInterval = setInterval(() => {
-      if (!this.active) return;
-      if (this.timer <= 0) {
-        clearInterval(this.timerInterval);
-        this.endAuctionForCurrentPlayer();
-      } else {
-        this.timer--;
-        this.io.to(this.room).emit('timerUpdated', this.timer);
-      }
-    }, 1000);
+    // Timer is disabled. Flow is manually controlled by the admin.
   }
 
   notifyPlayerStatus(player) {
@@ -136,13 +133,8 @@ class AuctionEngine {
     if (error) throw error;
     if ((count || 0) >= (team.tournaments?.squad_limit || 18)) throw new Error('Squad full');
 
-    const wasSniping = this.timer <= 10;
     this.currentBid = bidAmount;
     this.highestTeamId = teamId;
-    if (wasSniping) {
-      this.timer = 10;
-      this.io.to(this.room).emit('timerResetTo10', 10);
-    }
 
     this.io.to(this.room).emit('bidPlaced', { teamId, bidAmount });
     if (this.previousHighestTeamId && this.previousHighestTeamId !== teamId) {
@@ -157,21 +149,15 @@ class AuctionEngine {
 
   pause() {
     this.active = false;
-    clearInterval(this.timerInterval);
-    this.timerInterval = null;
   }
 
   resume() {
     if (!this.currentPlayer) return;
     this.active = true;
-    if (!this.timerInterval) this.startTimer();
-    this.io.to(this.room).emit('timerUpdated', this.timer);
   }
 
   addTime(seconds) {
-    if (!this.active || !this.currentPlayer) return;
-    this.timer += seconds;
-    this.io.to(this.room).emit('timerUpdated', this.timer);
+    // Timer is disabled.
   }
 
   async assignActivePlayer(teamId, points) {
@@ -353,8 +339,6 @@ class AuctionEngine {
 
   stop() {
     this.active = false;
-    clearInterval(this.timerInterval);
-    this.timerInterval = null;
   }
 }
 

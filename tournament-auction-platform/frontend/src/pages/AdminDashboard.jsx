@@ -86,15 +86,15 @@ export default function AdminDashboard() {
           </button>
         </motion.div>
 
-        {tournament?.status === 'completed' && (
+        {tournament && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             className="mb-6 p-4 bg-white border border-red-200 rounded-lg flex items-center justify-between"
           >
             <div>
-              <p className="font-semibold text-red-700">Tournament completed</p>
-              <p className="text-sm text-slate-500">Delete all players, teams, and data to start fresh.</p>
+              <p className="font-semibold text-red-700">Danger Zone</p>
+              <p className="text-sm text-slate-500">Delete all players, teams, and tournament data to start fresh.</p>
             </div>
             <button
               onClick={handleCleanup}

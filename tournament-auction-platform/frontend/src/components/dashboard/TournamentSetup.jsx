@@ -79,7 +79,7 @@ export default function TournamentSetup({ tournament, onTournamentChange }) {
               {tournament.status.toUpperCase()}
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center text-sm">
+          <div className="grid grid-cols-2 gap-2 text-center text-sm">
             <div className="bg-cyan-900/20 p-2 rounded">
               <p className="text-cyan-400 font-bold">{tournament.points_per_team}</p>
               <p className="text-gray-400 text-xs">Points</p>
@@ -87,10 +87,6 @@ export default function TournamentSetup({ tournament, onTournamentChange }) {
             <div className="bg-cyan-900/20 p-2 rounded">
               <p className="text-cyan-400 font-bold">{tournament.squad_limit}</p>
               <p className="text-gray-400 text-xs">Squad Limit</p>
-            </div>
-            <div className="bg-cyan-900/20 p-2 rounded">
-              <p className="text-cyan-400 font-bold">{tournament.timer_seconds}s</p>
-              <p className="text-gray-400 text-xs">Timer</p>
             </div>
           </div>
           {tournament.status === 'draft' && (
@@ -121,7 +117,7 @@ export default function TournamentSetup({ tournament, onTournamentChange }) {
           <input name="date" type="date" value={form.date} onChange={handleChange} required
             className="p-2.5 rounded-lg bg-black/50 border border-gray-600 text-white focus:border-cyan-400 focus:outline-none [color-scheme:dark]" />
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-gray-400 text-xs block mb-1">Points</label>
             <input name="points_per_team" type="number" value={form.points_per_team} onChange={handleChange}
@@ -130,11 +126,6 @@ export default function TournamentSetup({ tournament, onTournamentChange }) {
           <div>
             <label className="text-gray-400 text-xs block mb-1">Squad Limit</label>
             <input name="squad_limit" type="number" value={form.squad_limit} onChange={handleChange}
-              className="w-full p-2 rounded-lg bg-black/50 border border-gray-600 text-white focus:border-cyan-400 focus:outline-none text-center" />
-          </div>
-          <div>
-            <label className="text-gray-400 text-xs block mb-1">Timer (s)</label>
-            <input name="timer_seconds" type="number" value={form.timer_seconds} onChange={handleChange}
               className="w-full p-2 rounded-lg bg-black/50 border border-gray-600 text-white focus:border-cyan-400 focus:outline-none text-center" />
           </div>
         </div>
