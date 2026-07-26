@@ -36,9 +36,14 @@ export default function PlayerRegistrationForm({ onSuccess }) {
     setLoading(true);
     setErr('');
     try {
-      const tournament = await api.getActiveTournament();
+      let tournament = null;
+      try {
+        tournament = await api.getActiveTournament();
+      } catch (_) {
+        // 404 means no active tournament
+      }
       if (!tournament) {
-        setErr('No active tournament found');
+        setErr('No active tournament found. Ask the admin to activate a tournament first.');
         setLoading(false);
         return;
       }
