@@ -9,22 +9,6 @@ export default function TeamManagement({ tournamentId, tournamentStatus }) {
   const [selectedCaptain, setSelectedCaptain] = useState('');
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    fetchTeams();
-    fetchCaptains();
-
-    const socket = initSocket();
-    if (socket) {
-      const handlePlayerSold = () => {
-        fetchTeams();
-      };
-      socket.on('playerSold', handlePlayerSold);
-      return () => {
-        socket.off('playerSold', handlePlayerSold);
-      };
-    }
-  }, [tournamentId]);
-
   const fetchTeams = async () => {
     if (!tournamentId) return;
     try {
@@ -44,6 +28,22 @@ export default function TeamManagement({ tournamentId, tournamentStatus }) {
     }
   };
 
+  useEffect(() => {
+    fetchTeams();
+    fetchCaptains();
+
+    const socket = initSocket();
+    if (socket) {
+      const handlePlayerSold = () => {
+        fetchTeams();
+      };
+      socket.on('playerSold', handlePlayerSold);
+      return () => {
+        socket.off('playerSold', handlePlayerSold);
+      };
+    }
+  }, [tournamentId]);
+
   const createTeam = async () => {
     if (!newTeamName || !selectedCaptain) return;
     setCreating(true);
@@ -61,11 +61,12 @@ export default function TeamManagement({ tournamentId, tournamentStatus }) {
 
   if (!tournamentId) {
     return (
-      <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+      <div className="bg-slate-900/70 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/20">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-xl font-semibold">Teams &amp; Captains</h2>
+          <span className="text-2xl">&#127942;</span>
+          <h2 className="text-2xl font-bold">Teams &amp; Captains</h2>
         </div>
-        <p className="text-slate-500 text-sm">Create a tournament first, then add teams here.</p>
+        <p className="text-slate-400 text-sm">Create a tournament first, then add teams here.</p>
       </div>
     );
   }
@@ -73,9 +74,15 @@ export default function TeamManagement({ tournamentId, tournamentStatus }) {
   const canEdit = tournamentStatus === 'draft' || tournamentStatus === 'active';
 
   return (
-    <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+    <div className="bg-slate-900/70 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/20">
       <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-xl font-semibold">Teams &amp; Captains</h2>
+        <span className="text-2xl">&#127942;</span>
+        <h2 className="text-2xl font-bold">Teams &amp; Captains</h2>
+        {teams.length > 0 && (
+          <span className="ml-auto text-xs bg-cyan-500/15 text-cyan-400 px-2.5 py-0.5 rounded-full border border-cyan-500/30">
+            {teams.length} teams
+          </span>
+        )}
       </div>
 
       <div className="space-y-2 mb-6 max-h-64 overflow-y-auto pr-1">
@@ -83,32 +90,32 @@ export default function TeamManagement({ tournamentId, tournamentStatus }) {
           <p className="text-slate-500 text-sm text-center py-4">No teams created yet.</p>
         )}
         {teams.map(team => (
-          <div key={team.id} className="p-3 bg-slate-50 rounded-md border border-slate-200">
+          <div key={team.id} className="p-3 bg-black/30 rounded-xl border border-white/5">
             <div className="flex items-center justify-between">
               <p className="font-bold">{team.name}</p>
-              <span className="text-slate-600 text-sm font-mono">{team.remaining_points}pts</span>
+              <span className="text-cyan-400 text-sm font-mono font-semibold">{team.remaining_points}pts</span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Captain: <span className="text-slate-700">{team.captain_name || 'Unassigned'}</span>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Captain: <span className="text-gray-300">{team.captain_name || 'Unassigned'}</span>
             </p>
           </div>
         ))}
       </div>
 
       {canEdit && (
-        <div className="space-y-2 border-t border-slate-200 pt-4">
-          <p className="text-xs text-slate-500 font-medium">Add a team and choose a captain from registered players</p>
+        <div className="space-y-2 border-t border-white/10 pt-4">
+          <p className="text-xs text-gray-500 font-medium">Add a team and choose a captain from registered players</p>
           <input
             type="text"
             placeholder="Team name"
             value={newTeamName}
             onChange={(e) => setNewTeamName(e.target.value)}
-            className="w-full p-2.5 rounded-md bg-white border border-slate-300 text-slate-950 focus:border-slate-900 focus:outline-none"
+            className="w-full p-2.5 rounded-lg bg-black/50 border border-white/10 text-white focus:border-cyan-400 focus:outline-none"
           />
           <select
             value={selectedCaptain}
             onChange={(e) => setSelectedCaptain(e.target.value)}
-            className="w-full p-2.5 rounded-md bg-white border border-slate-300 text-slate-950 focus:border-slate-900 focus:outline-none"
+            className="w-full p-2.5 rounded-lg bg-black/50 border border-white/10 text-white focus:border-cyan-400 focus:outline-none"
           >
             <option value="">Select a captain</option>
             {captains.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
@@ -116,7 +123,7 @@ export default function TeamManagement({ tournamentId, tournamentStatus }) {
           <button
             onClick={createTeam}
             disabled={creating || !newTeamName || !selectedCaptain}
-            className="w-full bg-slate-950 hover:bg-slate-800 text-white p-2.5 rounded-md font-semibold transition disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white p-2.5 rounded-lg font-bold transition disabled:opacity-50"
           >
             {creating ? 'Adding...' : 'Add Team'}
           </button>

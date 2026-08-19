@@ -94,7 +94,7 @@ export default function AdminControls({ tournamentId, disabled, onAuctionEnded, 
 
   if (!tournamentId) {
     return (
-      <div className="bg-white/10 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/30">
+      <div className="bg-slate-900/70 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/20">
         <div className="flex items-center gap-2 mb-2">
           <div className="text-2xl">&#9878;</div>
           <h2 className="text-2xl font-bold">Tournament Stats</h2>
@@ -201,7 +201,7 @@ export default function AdminControls({ tournamentId, disabled, onAuctionEnded, 
   return (
     <div className="space-y-6">
       {/* Live Auction Engine Controls */}
-      <div className="bg-slate-900 text-white p-6 rounded-2xl border border-cyan-500/30 relative overflow-hidden shadow-2xl shadow-cyan-950/20">
+      <div className="bg-gradient-to-br from-cyan-950 via-slate-900 to-indigo-950 text-white p-6 rounded-2xl border border-cyan-500/30 relative overflow-hidden shadow-2xl shadow-cyan-950/20">
         <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
@@ -388,7 +388,7 @@ export default function AdminControls({ tournamentId, disabled, onAuctionEnded, 
       </AnimatePresence>
 
       {/* Summary Statistics Card */}
-      <div className="bg-white/10 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/30">
+      <div className="bg-slate-900/70 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/20">
         <div className="flex items-center gap-2 mb-6">
           <div className="text-2xl">&#128202;</div>
           <h2 className="text-2xl font-bold">Tournament Stats &amp; Overview</h2>

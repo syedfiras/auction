@@ -60,7 +60,7 @@ export default function TournamentSetup({ tournament, onTournamentChange }) {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white/10 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/30 space-y-4">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/70 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/20 space-y-4">
       <div className="flex items-center gap-2">
         <div className="text-2xl">&#127944;</div>
         <h2 className="text-2xl font-bold">Tournament Setup</h2>
@@ -107,26 +107,26 @@ export default function TournamentSetup({ tournament, onTournamentChange }) {
         </div>
       )}
 
-      <form onSubmit={handleCreate} className="space-y-3 border-t border-gray-700/50 pt-4">
+      <form onSubmit={handleCreate} className="space-y-3 border-t border-white/10 pt-4">
         <p className="text-sm text-gray-400 font-medium">Create a new tournament</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input name="name" placeholder="Tournament name *" value={form.name} onChange={handleChange} required
-            className="col-span-full p-2.5 rounded-lg bg-black/50 border border-gray-600 text-white focus:border-cyan-400 focus:outline-none" />
+            className="col-span-full p-2.5 rounded-lg bg-black/50 border border-white/10 text-white focus:border-cyan-400 focus:outline-none" />
           <input name="location" placeholder="Location *" value={form.location} onChange={handleChange} required
-            className="p-2.5 rounded-lg bg-black/50 border border-gray-600 text-white focus:border-cyan-400 focus:outline-none" />
+            className="p-2.5 rounded-lg bg-black/50 border border-white/10 text-white focus:border-cyan-400 focus:outline-none" />
           <input name="date" type="date" value={form.date} onChange={handleChange} required
-            className="p-2.5 rounded-lg bg-black/50 border border-gray-600 text-white focus:border-cyan-400 focus:outline-none [color-scheme:dark]" />
+            className="p-2.5 rounded-lg bg-black/50 border border-white/10 text-white focus:border-cyan-400 focus:outline-none [color-scheme:dark]" />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-gray-400 text-xs block mb-1">Points</label>
             <input name="points_per_team" type="number" value={form.points_per_team} onChange={handleChange}
-              className="w-full p-2 rounded-lg bg-black/50 border border-gray-600 text-white focus:border-cyan-400 focus:outline-none text-center" />
+              className="w-full p-2 rounded-lg bg-black/50 border border-white/10 text-white focus:border-cyan-400 focus:outline-none text-center" />
           </div>
           <div>
             <label className="text-gray-400 text-xs block mb-1">Squad Limit</label>
             <input name="squad_limit" type="number" value={form.squad_limit} onChange={handleChange}
-              className="w-full p-2 rounded-lg bg-black/50 border border-gray-600 text-white focus:border-cyan-400 focus:outline-none text-center" />
+              className="w-full p-2 rounded-lg bg-black/50 border border-white/10 text-white focus:border-cyan-400 focus:outline-none text-center" />
           </div>
         </div>
         <button

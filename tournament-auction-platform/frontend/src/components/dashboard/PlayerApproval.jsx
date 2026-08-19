@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api } from '../../services/api';
 
-export default function PlayerApproval({ players, onUpdate, tournamentActive }) {
+export default function PlayerApproval({ players, onUpdate }) {
   const [loading, setLoading] = useState(null);
 
   const handleAction = async (id, action) => {
@@ -18,7 +18,7 @@ export default function PlayerApproval({ players, onUpdate, tournamentActive }) 
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/30">
+    <div className="bg-slate-900/70 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/20">
       <div className="flex items-center gap-2 mb-4">
         <div className="text-2xl">&#9919;</div>
         <h2 className="text-2xl font-bold">Player Registrations</h2>
@@ -37,7 +37,7 @@ export default function PlayerApproval({ players, onUpdate, tournamentActive }) 
       ) : (
         <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
           {players.map(player => (
-            <div key={player.id} className="flex items-center justify-between p-3 bg-black/30 rounded-xl hover:bg-black/40 transition">
+            <div key={player.id} className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5 hover:bg-black/40 transition">
               <div className="min-w-0 flex-1">
                 <p className="font-semibold truncate">{player.full_name}</p>
                 <p className="text-xs text-gray-400">

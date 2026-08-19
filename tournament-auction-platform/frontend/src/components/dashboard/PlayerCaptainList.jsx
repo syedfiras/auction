@@ -16,39 +16,6 @@ export default function PlayerCaptainList({ tournamentId }) {
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [pointsValue, setPointsValue] = useState(0);
 
-  useEffect(() => {
-    if (tab === 'players') {
-      fetchPlayers();
-      fetchTeams();
-    } else {
-      fetchCaptains();
-    }
-
-    const socket = initSocket();
-    if (socket) {
-      const handleUpdate = () => {
-        if (tab === 'players') {
-          fetchPlayers();
-          fetchTeams();
-        } else {
-          fetchCaptains();
-        }
-      };
-
-      socket.on('playerApproved', handleUpdate);
-      socket.on('playerRegistered', handleUpdate);
-      socket.on('playerSold', handleUpdate);
-      socket.on('playerUnsold', handleUpdate);
-
-      return () => {
-        socket.off('playerApproved', handleUpdate);
-        socket.off('playerRegistered', handleUpdate);
-        socket.off('playerSold', handleUpdate);
-        socket.off('playerUnsold', handleUpdate);
-      };
-    }
-  }, [tab, tournamentId]);
-
   const fetchPlayers = async () => {
     setLoading(true);
     try {
@@ -82,6 +49,39 @@ export default function PlayerCaptainList({ tournamentId }) {
       console.error(err);
     }
   };
+
+  useEffect(() => {
+    if (tab === 'players') {
+      fetchPlayers();
+      fetchTeams();
+    } else {
+      fetchCaptains();
+    }
+
+    const socket = initSocket();
+    if (socket) {
+      const handleUpdate = () => {
+        if (tab === 'players') {
+          fetchPlayers();
+          fetchTeams();
+        } else {
+          fetchCaptains();
+        }
+      };
+
+      socket.on('playerApproved', handleUpdate);
+      socket.on('playerRegistered', handleUpdate);
+      socket.on('playerSold', handleUpdate);
+      socket.on('playerUnsold', handleUpdate);
+
+      return () => {
+        socket.off('playerApproved', handleUpdate);
+        socket.off('playerRegistered', handleUpdate);
+        socket.off('playerSold', handleUpdate);
+        socket.off('playerUnsold', handleUpdate);
+      };
+    }
+  }, [tab, tournamentId]);
 
   const handleDeletePlayer = async (id, name) => {
     if (!window.confirm(`Delete player "${name}"? This will also remove their auction/bid history.`)) return;
@@ -156,7 +156,7 @@ export default function PlayerCaptainList({ tournamentId }) {
   const filteredPlayers = players.filter(p => p.status === playerFilter);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white/10 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/30">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/70 backdrop-blur-xl p-6 rounded-2xl border border-cyan-500/20">
       <div className="flex items-center gap-2 mb-4">
         <span className="text-2xl">&#128101;</span>
         <h2 className="text-2xl font-bold">All Players &amp; Captains</h2>
